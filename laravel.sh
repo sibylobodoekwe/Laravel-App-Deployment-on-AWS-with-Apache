@@ -44,7 +44,7 @@ sudo nano /etc/apache2/sites-available/your_project.conf
     Allow from all
     </Directory>
     </VirtualHost>
-
+    
 ### Enable Virtual Host Your Just Made
  sudo a2ensite your_project.conf
 
