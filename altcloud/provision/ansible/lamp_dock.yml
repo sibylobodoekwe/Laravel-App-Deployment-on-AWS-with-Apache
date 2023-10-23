@@ -1,0 +1,79 @@
+---
+- name: Deploy Docker containers for LAMP stack
+  hosts: all
+  become: true
+  vars:
+    ansible_distribution_release: "jammy"
+  tasks:
+    - name: Update the APT package index
+      apt:
+        update_cache: yes
+        allow_unauthenticated: yes
+
+    - name: Ensure old version of Docker is not installed
+      apt:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - docker
+
+    - name: Ensure docker is started
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create Docker network for LAMP containers
+      docker_network:
+        name: lamp_network
+        driver: bridge
+
+    - name: Deploy MySQL container
+      docker_container:
+        name: lamp_mysql
+        image: mysql
+        env:
+          MYSQL_ROOT_PASSWORD: mypassword
+          MYSQL_DATABASE: mydatabase
+        networks:
+          - name: lamp_network
+
+    - name: Deploy Apache container
+      docker_container:
+        name: lamp_apache
+        image: httpd
+        ports:
+          - "80:80"
+        volumes:
+          - "/path/to/your/html:/usr/local/apache2/htdocs"
+        networks:
+          - name: lamp_network
+        depends_on:
+          - lamp_mysql
+
+    - name: Deploy PHP container
+      docker_container:
+        name: lamp_php
+        image: php:apache
+        volumes:
+          - "/path/to/your/html:/var/www/html"
+        networks:
+          - name: lamp_network
+        depends_on:
+          - lamp_apache
+
+    - name: Create and start other containers
+      docker_container:
+        name: "{{ item.name }}"
+        image: "{{ item.image }}"
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ item.port }}"
+        networks:
+          - name: lamp_network
+      loop:
+        - { name: "nginx", image: "nginx:latest", port: "80" }
+        - { name: "mysql", image: "mysql:latest", port: "3306" }
+        - { name: "apache", image: "httpd:latest", port: "8080" }
+        - { name: "phpmyadmin", image: "phpmyadmin:latest", port: "80" }

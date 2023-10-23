@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+ master:
+    build: .
+    container_name: master
+    volumes:
+      - ./provision:/home/ansible/provision
+      - /home/ansible/home/ansible/ansible
+
+ slave:
+    build: .
+    container_name: slave
+    volumes:
+      - ./provision:/home/ansible/provision
+      - ansible:/home/ansible/ansible
