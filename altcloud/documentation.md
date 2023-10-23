@@ -26,10 +26,10 @@ apt-get update and apt-get dist-upgrade: Update and upgrade system packages.
 apt-get install -y --no-install-recommends ssh libffi-dev systemd openssh-client: Install required packages.
 Copying the Bash Script:
 
-COPY lamp_stack.sh /lamp_stack.sh: Copy the deployment script to the container.
+COPY lampstack.sh /lampstack.sh: Copy the deployment script to the container.
 Setting Permissions:
 
-RUN chmod +x /lamp_stack.sh: Make the script executable.
+RUN chmod +x /lampstack.sh: Make the script executable.
 Installing Puppet and Ansible:
 
 RUN apt-get -y install puppet: Install Puppet.
@@ -142,7 +142,7 @@ On the Master node:
 vagrant ssh master
 sudo su ansibyl
 cd ../ansibyl/scripts/
-echo '#!/bin/bash' > lamp_stack.sh
+echo '#!/bin/bash' > lampstack.sh
 Writing the Deploy LAMP Stack Script
 ```
 # Deploy LAMP stack script
@@ -189,12 +189,12 @@ sudo service apache2 restart
 echo \"LAMP stack deployed successfully.\"
 "
 
-# Append deploy script content to lamp_stack.sh
-vagrant ssh master -c 'sudo -u ansibyl tee -a /home/ansibyl/scripts/lamp_stack.sh' <<< "$deploy_script_content"
-Copying lamp_stack.sh to Slave Node
+# Append deploy script content to lampstack.sh
+vagrant ssh master -c 'sudo -u ansibyl tee -a /home/ansibyl/scripts/lampstack.sh' <<< "$deploy_script_content"
+Copying lampstack.sh to Slave Node
 ```
-# Copy lamp_stack.sh to the Slave node
-vagrant ssh master -c "sudo -u ansibyl scp -o StrictHostKeyChecking=no /home/ansibyl/scripts/lamp_stack.sh ansibyl@slave:/home/ansibyl/scripts/"
+# Copy lampstack.sh to the Slave node
+vagrant ssh master -c "sudo -u ansibyl scp -o StrictHostKeyChecking=no /home/ansibyl/scripts/lampstack.sh ansibyl@slave:/home/ansibyl/scripts/"
 Installing Ansible on Slave Node
 ```
 # Install Ansible on the Slave node

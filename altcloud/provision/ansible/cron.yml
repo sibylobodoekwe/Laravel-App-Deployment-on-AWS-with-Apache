@@ -1,0 +1,15 @@
+
+---
+- name: Create Cron Job to Check Server Uptime
+  hosts: slave
+  become: true
+  become_user: ansibyl
+
+  tasks:
+    - name: Create Cron Job to Check Server Uptime
+      cron:
+        name: 'Check_Server_Uptime'
+        job: 'uptime >> /home/ansibyl/logs/uptime.log'
+        special_time: daily
+        state: present
+      delegate_to: master

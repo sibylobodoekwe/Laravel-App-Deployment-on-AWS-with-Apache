@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  master:
+    build: .
+    container_name: master
+    volumes:
+      - ./provision:/home/ansible/provision
+
+  slave:
+    build: .
+    container_name: slave
+    volumes:
+      - ./provision:/home/ansible/provision
+
+  ansible:
+    build: .
+    image: lamp-stack
+    volumes:
+      - ./ansible:/home/ansible
+    command: ansible-playbook /home/ansible/lamp.yml -i /home/ansible/hosts.ini --ask-become-pass
+
+  ssh:
+    image: linuxserver/openssh-server
+    ports:
+      - "22:22"
+    depends_on:
+      - ansible

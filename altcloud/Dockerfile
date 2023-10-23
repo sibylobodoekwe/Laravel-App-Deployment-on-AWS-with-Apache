@@ -8,9 +8,15 @@ RUN  apt-get update -y && apt-get dist-upgrade -y
 RUN apt-get update -y && apt-get dist-upgrade -y
 RUN apt-get install -y --no-install-recommends ssh libffi-dev systemd openssh-client
 
-COPY lamp_stack.sh /lamp_stack.sh
+COPY provision/ansible/lampstack.sh /lampstack.sh
 
-RUN chmod +x /lamp_stack.sh
+# Copy the necessary Ansible files to the container
+COPY provision/ansible/hosts.ini /home/ansible/
+COPY provision/ansible/lampdock.yml /home/ansible/
+COPY provision/ansible/cron.yml /home/ansible/
+
+
+RUN chmod +x /lampstack.sh
 
 RUN  apt-get -y install puppet
 
@@ -46,20 +52,15 @@ RUN  sed -i -e 's/\(UsePAM \)yes/\1 no/' /etc/ssh/sshd_config
 
 RUN  apt-get update && apt-get install -y ansible sshpass python-apt
 
-# # copy the necessary Ansible files to the container
-# COPY hosts.ini /home/ansible/
-# COPY lamp_dock.yaml /home/ansible/
-# COPY cron.yml /home/ansible/
-
 # Set the entrypoint to RUN  the Ansible playbook
-ENTRYPOINT ["ansible-playbook", "/home/ansible/lamp_dock.yaml", "-i", "/home/ansible/hosts.ini", "--ask-become-pass"]
+ENTRYPOINT ["ansible-playbook", "/home/ansible/lampdock.yml", "-i", "/home/ansible/hosts.ini", "--ask-become-pass"]
 
 # Start Configure OpenSSH server
 RUN apt-get update && apt-get install -y openssh-server
 
 # Configure OpenSSH server
 RUN mkdir /var/run/sshd && \
-    echo 'root:root' | chpasswd && \
+    echo 'ansibyl:ansibyl' | chpasswd && \
     sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
     sed -i 's/#StrictModes yes/StrictModes no/' /etc/ssh/sshd_config

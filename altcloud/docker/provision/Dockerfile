@@ -34,12 +34,12 @@ RUN  /usr/sbin/sshd
 RUN  apt-get update && apt-get install -y ansible sshpass python-apt
 
 # Copy the necessary Ansible files to the container
-# COPY inventory.ini /home/ansible/
-# COPY lamp.yml /home/ansible/
+# COPY hosts.ini/home/ansible/
+# COPY lampdock.yml /home/ansible/
 # COPY cron.yml /home/ansible/
 
 # Set the entrypoint to RUN  the Ansible playbook
-ENTRYPOINT ["ansible-playbook", "/home/ansibly/lamp.yml", "-i", "/home/ansible/hosts.ini", "--ask-become-pass"]
+ENTRYPOINT ["ansible-playbook", "/home/ansibly/lampdock.yml", "-i", "/home/ansible/hosts.ini", "--ask-become-pass"]
 
 # Start Systemd (systemctl)
 CMD ["/lib/systemd/systemd"]

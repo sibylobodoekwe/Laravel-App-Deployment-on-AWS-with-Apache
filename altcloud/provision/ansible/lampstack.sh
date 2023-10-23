@@ -1,28 +1,24 @@
 #!/bin/bash
 
-# Update package information
+# Update and upgrade
 sudo apt-get update
-
-# Upgrade installed packages
 sudo apt-get upgrade -y
-
-# Install LAMP stack components
 sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql git
 
-# Start and enable Apache
+#  Apache
 sudo systemctl start apache2
 sudo systemctl enable apache2
 
-# Start and enable MySQL
+# MySQL
 sudo systemctl start mysql
 sudo systemctl enable mysql
 
-# Clone Laravel repository
+# Clone Laravel git repository
 git clone https://github.com/laravel/laravel /var/www/html/laravel
 
-# Create MySQL database
+# Create and configure MySQL database
 sudo mysql -e "CREATE DATABASE ansibyl_db;"
-sudo mysql -e "CREATE USER 'ansibyl'@'localhost' IDENTIFIED BY 'ansibyl@cloud';"
+sudo mysql -e "CREATE USER 'ansibyl'@'localhost' IDENTIFIED BY 'ansibyl.cloud';"
 sudo mysql -e "GRANT ALL PRIVILEGES ON ansibyl_db.* TO 'ansibyl'@'localhost';"
 sudo mysql -e "FLUSH PRIVILEGES;"
 
@@ -37,6 +33,7 @@ sudo bash -c 'echo "ServerName localhost" >> /etc/apache2/apache2.conf'
 
 # Restart Apache
 sudo service apache2 restart
+
 
 # Display deployment completion message
 echo "LAMP stack deployed successfully."
