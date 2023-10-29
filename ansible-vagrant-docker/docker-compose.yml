@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  lamp_mysql:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: mpassword
+      MYSQL_DATABASE: ansibyl
+    networks:
+      - lamp_network
+
+  lamp_apache:
+    image: httpd
+    ports:
+      - "80:80"
+    volumes:
+      - "/path/to/your/html:/usr/local/apache2/htdocs"
+    networks:
+      - lamp_network
+    depends_on:
+      - lamp_mysql
+
+  lamp_php:
+    image: php:apache
+    volumes:
+      - "/var/www/html:/var/www/html"
+    networks:
+      - lamp_network
+    depends_on:
+      - lamp_apache
+
+  lamp_network:
+    driver: bridge
+      Create and start other containers

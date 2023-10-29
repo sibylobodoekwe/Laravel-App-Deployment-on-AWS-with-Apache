@@ -1,0 +1,28 @@
+- name: Cronus
+  hosts: all
+  become: yes
+  environment:
+    PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+  tasks:
+    - name: Create a cron job to run the uptime check script every day at 12 am
+      cron:
+        name: "Run Uptime Check at 12 am"
+        minute: "0"
+        hour: "0"
+        job: "/home/ansibyl/scripts/uptime.sh >> /home/ansibyl/logs/uptime.log 2>&1"
+        state: present
+
+    - name: Run the Uptime Check Script
+      ansible.builtin.command: /home/ansibyl/scripts/uptime.sh
+      async: 0
+      poll: 0
+      register: script_result
+
+    - name: Send an email with the Uptime Check result
+      mail:
+        host: localhost
+        port: 25
+        subject: "Uptime Check Result"
+        to: "testsybil.dev@gmail.com"
+        body: "The uptime check cron job executed successfully. Result:\n{{ script_result.stdout }}"
+      delegate_to: localhost

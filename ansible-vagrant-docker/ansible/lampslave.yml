@@ -1,0 +1,15 @@
+---
+- name: deploy script on slave node and slave cronjob
+  hosts: local
+  become: true
+  tasks:
+
+    - name: copy the bash script to the slave machine
+      ansible.builtin.copy:
+        src: cronslave.sh
+        dest: ~/
+        owner: root
+        group: root
+        mode: '0744'
+
+

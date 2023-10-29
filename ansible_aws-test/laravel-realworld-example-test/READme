@@ -1,0 +1,306 @@
+# Laravel App Deployment on AWS with Apache
+
+​
+This repository contains a Laravel project. Laravel is a popular PHP web application framework that follows the MVC (Model-View-Controller) architectural pattern. It is designed to make common tasks in web development easier and quicker.
+​
+
+## Prerequisites
+
+​
+Before you can run this project, you need to have the following installed on your system:
+​
+
+- PHP 7.3 or higher
+- Composer
+- MySQL
+- Apache
+  ​
+  And a basic knowledge of `AWS EC2` instances
+  ​
+
+## Installation
+
+​1. Clone, zip and unzip this laravel repo repository to your local machine using the following command:
+   ​
+
+```
+git clone https://github.com/f1amy/laravel-realworld-example-app
+
+```
+
+​then copy your project files from your computer to server
+
+     scp -i your_key.pem your_project.zip ubuntu@your_ip -v
+     sudo unzip your_project.zip -d /var/www/html/
+
+
+
+​
+​2. Change into the project directory:
+​
+
+    cd your-laravel-project
+
+​
+​ 3. Install the required dependencies using Composer:
+​
+
+    composer install
+
+​
+​ 4. Copy the `.env.example` file to `.env`:
+​
+
+    cp .env.example .env
+
+​
+​
+​ 5. Generate an application key:
+​
+
+     php artisan key:generate
+
+​ 6. Configure your database connection in the `.env` file.
+​ 7. Run the database migrations:
+​
+
+    php artisan migrate
+
+​
+​ 8. Start the local development server:
+​
+
+      php artisan serve
+
+​
+​
+Now, you can access the Laravel application in your web browser by navigating to `http://localhost:8000`.
+​
+
+## Read More
+
+You'd find a more detailed guide on this project https://medium.com/@sibylnkaechi/deploying-laravel-app-with-apache-and-mysql-704738b3fbd3 and other cloud projects on my blog https://medium.com/@sibylnkaechi
+​
+
+## Contributing
+
+Contributions to this project are welcome. Please follow the standard open-source practices and guidelines for contributing.
+​
+
+## License
+
+​
+This project is licensed under the MIT License. Please see the [LICENSE](LICENSE) file for more information.
+​
+
+
+-----------------------------------------------------------------------------
+
+
+Setting up Vagrant:
+First, we need to set up a Vagrantfile that will define our virtual machine environment.
+
+Here is a basic example of a Vagrantfile that will provision two Ubuntu-based servers:
+
+ruby
+Download
+Copy code
+Vagrant.configure("2") do |config|
+ config.vm.box = "ubuntu/bionic64"
+
+ config.vm.define "master" do |master|
+    master.vm.network "private_network", ip: "192.168.33.10"
+ end
+
+ config.vm.define "slave" do |slave|
+    slave.vm.network "private_network", ip: "192.168.33.11"
+ end
+end
+To create the VMs, run vagrant up in the terminal.
+
+Automating LAMP Stack Deployment:
+Create a bash script called lamp-stack.sh with the following content:
+
+bash
+Download
+Copy code
+#!/bin/bash
+
+# Update packages
+sudo apt-get update
+
+# Install Apache, MySQL, PHP, and other required packages
+sudo apt-get install -y apache2 mysql-server php libapache2-mod-php php-mysql
+
+# Clone the PHP application from the GitHub repository
+cd /var/www/html
+sudo git clone https://github.com/laravel/laravel.git
+
+# Set permissions for the cloned repository
+sudo chown -R $USER:$USER laravel
+cd laravel
+sudo chmod -R 755 storage bootstrap/cache
+
+# Enable Apache modules and restart the service
+sudo a2enmod rewrite
+sudo systemctl restart apache2
+
+# Create a new MySQL database and user for the PHP application
+mysql -u root -p <<-EOSQL
+CREATE DATABASE laravel;
+CREATE USER 'laravel'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON laravel.* TO 'laravel'@'localhost';
+FLUSH PRIVILEGES;
+EOSQL
+
+# Restart MySQL service
+sudo systemctl restart mysql
+
+echo "LAMP stack successfully installed and configured!"
+Make the script executable with the command chmod +x lamp-stack.sh.
+
+To execute the script on the "Master" node, use the command vagrant ssh master -c "/vagrant/lamp-stack.sh".
+
+Setting up Ansible:
+Install Ansible on your local machine using sudo apt-get install ansible.
+
+Create an Ansible playbook called deploy.yml with the following content:
+
+yaml
+Download
+Copy code
+---
+- name: Deploy LAMP stack
+ hosts: slave
+ become: yes
+ tasks:
+    - name: Execute bash script from Master node
+      ansible.builtin.script: /path/to/lamp-stack.sh
+      args:
+        executable: /bin/bash
+
+    - name: Verify PHP application accessibility
+      ansible.builtin.uri:
+        url: http://{{ ansible_host }}/laravel/public/
+      register: response
+      until: response.status == 200
+      retries: 10
+      delay: 10
+
+    - name: Display response status
+      ansible.builtin.debug:
+        var: response.status
+
+    - name: Create a cron job on the Slave node to check the server's uptime every day at 12 am
+      ansible.builtin.cron:
+        name: Check server uptime
+        job: "*/12 * * * /usr/bin/uptime"
+        user: root
+To execute the playbook, run ansible-playbook -i 'slave,' deploy.yml.
+
+Take screenshots as evidence of the application's accessibility by visiting http://<VM's IP address>/laravel/public/.
+
+Note: The above steps provide a general overview and may require adjustments based on your specific environment and project requirements. Please ensure you have a thorough understanding of the steps involved and have implemented appropriate security measures before running them in a production environment.
+
+Also, it is recommended to keep the private keys for your servers securely stored and use an SSH agent for managing them during the execution of the Ansible playbook.
+
+In the provided examples, it is assumed that you have root access to the "Slave" node, but it is generally recommended to limit root access for security reasons and instead use sudo to grant temporary root privileges as needed.</s> </s>
+
+This will set up a Vagrant environment with two VMs, each provisioned with the LAMP stack, where the "Master" VM acts as the host and the "Slave" VM as the client.</s>
+
+The Vagrantfile provided defines two VMs with the following settings:
+
+VM box: "ubuntu/bionic64"
+Network: "private_network" with IPs "192.168.33.10" and "192.168.33.11"
+The lamp-stack.sh script installs and configures the Apache, MySQL, and PHP packages, and then clones the PHP application from the Laravel GitHub repository.
+
+The Ansible playbook, deploy.yml, executes the lamp-stack.sh script on the "Slave" node to set up the LAMP stack, verifies the PHP application's accessibility, and creates a cron job on the "Slave" node to check the server's uptime every day at 12 am.
+
+The IP address of the "Slave" node is required to access the PHP application from the host machine.</s>
+
+Remember to replace "/path/to/lamp-stack.sh" with the actual path to the script on the "Master" node. Additionally, please note that this example assumes a Linux environment and may need adjustments for Windows or macOS systems.</s>
+
+The Vagrantfile and the scripts provided can be customized to suit different project requirements, such as deploying different PHP applications, using different operating systems, or configuring different versions of the LAMP stack components.</s>
+
+It is also important to note that these scripts should be tested thoroughly before being used in a production environment, as they may not include all necessary security measures.</s>
+
+In the end, these steps should help you set up a Vagrant environment with two VMs, each hosting a PHP application with the LAMP stack, and verify that the PHP application is accessible on the "Slave" VM.</s>
+
+For a more comprehensive and in-depth guide, it is recommended to consult the official documentation for Vagrant, Ansible, and PHP.
+
+The purpose of this guide is to provide a simple, straightforward solution for creating a local development environment with Vagrant, Ansible, and PHP.
+
+To create a Vagrant environment with Ansible and PHP, follow these steps:
+
+Install Vagrant: https://www.vagrantup.com/downloads.html
+Install VirtualBox: https://www.virtualbox.org/wiki/Downloads
+Install Ansible: https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html
+Create a new Vagrantfile:
+Download
+Copy code
+Vagrant.configure("2") do |config|
+ config.vm.box = "bento/ubuntu-18.04"
+ config.vm.network "private_network", ip: "192.168.33.10"
+ config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "provisioning/playbook.yml"
+ end
+end
+Create an Ansible playbook in a directory named provisioning within your Vagrantfile directory:
+Download
+Copy code
+---
+- name: Set up PHP development environment
+ hosts: all
+ become: true
+ tasks:
+    - name: Install Apache
+      apt:
+        name: apache2
+        state: present
+    - name: Install PHP
+      apt:
+        name: php
+        state: present
+    - name: Install MySQL
+      apt:
+        name: mysql-server
+        state: present
+    - name: Start Apache and enable mod_rewrite
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+      notify:
+        - enable mod_rewrite
+
+ handlers:
+    - name: enable mod_rewrite
+      command: a2enmod rewrite
+      args:
+        creates: /etc/apache2/mods-enabled/rewrite.load
+In the same directory as your Vagrantfile, run the following command to create the VMs:
+Download
+Copy code
+vagrant up
+Once the VMs are up and running, you can access the "Slave" VM by running:
+
+
+
+is that a valid ip that would work if i configure on vagrant?
+
+
+It is not recommended to directly configure IPs on Vagrant. Vagrant automatically configures private networks for all the virtual machines that it creates.
+
+The reason is that private networks provide better isolation between the host and guest machines, reducing the risk of IP conflicts.
+
+If you want to access a guest machine via the IP, you can do so by accessing http://<guest_machine_ip>:<port>. For example, if your guest machine has an IP of 192.168.56.100 and you want to access it via port 80, you can access it via http://192.168.56.100.
+
+Remember, it's crucial to have Vagrant installed and properly configured on your host machine before starting these steps.
+
+For further details and clarification, kindly refer to the official Vagrant documentation: https://www.vagrantup.com/docs/networking/private_network
+
+Always remember to backup your work and configuration files before making any significant changes to your development environment. This helps avoid potential data loss.
+
+Hope this helps! Let me know if you have any further questions.
+
+
